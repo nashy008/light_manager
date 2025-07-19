@@ -1,0 +1,298 @@
+alias: Living Room Light Manager
+description: "Controls the lights, the brightness and temperature"
+triggers:
+  - id: timeTrigger
+    trigger: time_pattern
+    minutes: /2
+  - type: occupied
+    device_id: 9706c78e2d523555693d4df77654326a
+    entity_id: d96d8d7ebf6828029af25ca34279f1b0
+    domain: binary_sensor
+    trigger: device
+    id: livingOccupied
+  - type: occupied
+    device_id: caae8e04d8675e355e7ee36317bbb63c
+    entity_id: ba73fefac73b73ac8f66000e162ea7b3
+    domain: binary_sensor
+    trigger: device
+    id: hallOccupied
+  - type: occupied
+    device_id: 3973a4995d832f78d7dfbb67da350793
+    entity_id: cea7e3192b706439fc5eb7be2d55640d
+    domain: binary_sensor
+    trigger: device
+    id: courtyardOccupied
+  - trigger: state
+    entity_id:
+      - timer.livingroom_lights
+    to: idle
+    id: timerFinished
+  - trigger: time
+    at: "01:00:00"
+    id: autoReset
+conditions: []
+actions:
+  - if:
+      - condition: state
+        entity_id: input_boolean.living_room_lights_auto_mode
+        state: "on"
+    then:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: timeTrigger
+              - condition: state
+                entity_id: light.living_room_lights
+                state: "on"
+            sequence:
+              - variables:
+                  tod: "{{ states('input_select.time_of_day') }}"
+                  living_target_brightness: |
+                    {% if tod == 'Day' %}
+                      {{ living_day_brightness }}
+                    {% elif tod == 'Evening' %}
+                      {{ living_evening_brightness }}
+                    {% elif tod == 'Night' %}
+                      {{ living_night_brightness }}
+                    {% else %}
+                      {{ living_off_brightness }}
+                    {% endif %}
+                  living_target_temperature: |
+                    {% if tod == 'Day' %}
+                      {{ living_day_temperature }}
+                    {% elif tod == 'Evening' %}
+                      {{ living_evening_temperature }}
+                    {% elif tod == 'Night' %}
+                      {{ living_night_temperature }}
+                    {% else %}
+                      {{ living_off_temperature }}
+                    {% endif %}
+                  stove_target_brightness: |
+                    {% if tod == 'Day' %}
+                      {{ stove_day_brightness }}
+                    {% elif tod == 'Evening' %}
+                      {{ stove_evening_brightness }}
+                    {% elif tod == 'Night' %}
+                      {{ stove_night_brightness }}
+                    {% else %}
+                      {{ stove_off_brightness }}
+                    {% endif %}
+                  stove_target_temperature: |
+                    {% if tod == 'Day' %}
+                      {{ stove_day_temperature }}
+                    {% elif tod == 'Evening' %}
+                      {{ stove_evening_temperature }}
+                    {% elif tod == 'Night' %}
+                      {{ stove_night_temperature }}
+                    {% else %}
+                      {{ stove_off_temperature }}
+                    {% endif %}
+                  hall_target_brightness: |
+                    {% if tod == 'Day' %}
+                      {{ hall_day_brightness }}
+                    {% elif tod == 'Evening' %}
+                      {{ hall_evening_brightness }}
+                    {% elif tod == 'Night' %}
+                      {{ hall_night_brightness }}
+                    {% else %}
+                      {{ hall_off_brightness }}
+                    {% endif %}
+                  hall_target_temperature: |
+                    {% if tod == 'Day' %}
+                      {{ hall_day_temperature }}
+                    {% elif tod == 'Evening' %}
+                      {{ hall_evening_temperature }}
+                    {% elif tod == 'Night' %}
+                      {{ hall_night_temperature }}
+                    {% else %}
+                      {{ hall_off_temperature }}
+                    {% endif %}
+              - data:
+                  light_entity: "{{ living_light_entity }}"
+                  target_brightness_percent: "{{ living_target_brightness }}"
+                  target_temperature: "{{ living_target_temperature }}"
+                  brightness_step_percent: "{{ brightness_step }}"
+                  temperature_step: "{{ temperature_step }}"
+                  transition: "{{ transition_time }}"
+                action: script.light_step_to_target
+              - data:
+                  light_entity: "{{ stove_light_entity }}"
+                  target_brightness_percent: "{{ stove_target_brightness }}"
+                  target_temperature: "{{ stove_target_temperature }}"
+                  brightness_step_percent: "{{ brightness_step }}"
+                  temperature_step: "{{ temperature_step }}"
+                  transition: "{{ transition_time }}"
+                action: script.light_step_to_target
+              - data:
+                  light_entity: "{{ hall_light_entity }}"
+                  target_brightness_percent: "{{ hall_target_brightness }}"
+                  target_temperature: "{{ hall_target_temperature }}"
+                  brightness_step_percent: "{{ brightness_step }}"
+                  temperature_step: "{{ temperature_step }}"
+                  transition: "{{ transition_time }}"
+                action: script.light_step_to_target
+            alias: Light Adjust if On
+          - conditions:
+              - condition: trigger
+                id:
+                  - livingOccupied
+                  - hallOccupied
+                  - courtyardOccupied
+              - condition: device
+                type: is_off
+                device_id: efe42a84d5bd65f32bbfde0c3093b565
+                entity_id: b45894933f0932b68391cfcfc61af679
+                domain: light
+            sequence:
+              - choose:
+                  - conditions:
+                      - condition: state
+                        entity_id: input_select.time_of_day
+                        state: Day
+                    sequence:
+                      - action: scene.turn_on
+                        metadata: {}
+                        data:
+                          transition: 2
+                        target:
+                          entity_id: scene.living_area_day
+                  - conditions:
+                      - condition: state
+                        entity_id: input_select.time_of_day
+                        state: Evening
+                    sequence:
+                      - action: scene.turn_on
+                        metadata: {}
+                        data:
+                          transition: 2
+                        target:
+                          entity_id: scene.living_area_evening
+                  - conditions:
+                      - condition: state
+                        entity_id: input_select.time_of_day
+                        state: Night
+                    sequence:
+                      - action: scene.turn_on
+                        metadata: {}
+                        data:
+                          transition: 2
+                        target:
+                          entity_id: scene.living_area_night
+    alias: If Auto Mode On --> Lights on/adjust
+  - if:
+      - condition: trigger
+        id:
+          - livingOccupied
+          - hallOccupied
+          - courtyardOccupied
+      - condition: state
+        entity_id: input_boolean.living_room_lights_auto_mode
+        state: "on"
+    then:
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: >-
+            {{ (states('input_number.living_room_lights_timer_duration') |
+            float(0) * 60) | int }}
+        target:
+          entity_id: timer.livingroom_lights
+    alias: Restarts Timer on motion
+  - if:
+      - condition: state
+        entity_id: input_boolean.living_room_lights_auto_mode
+        state: "on"
+    then:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id:
+                  - livingOccupied
+            sequence:
+              - action: input_text.set_value
+                metadata: {}
+                data:
+                  value: Living
+                target:
+                  entity_id: input_text.living_room_triggered_by
+          - conditions:
+              - condition: trigger
+                id:
+                  - hallOccupied
+            sequence:
+              - action: input_text.set_value
+                metadata: {}
+                data:
+                  value: Hall
+                target:
+                  entity_id: input_text.living_room_triggered_by
+          - conditions:
+              - condition: trigger
+                id:
+                  - courtyardOccupied
+            sequence:
+              - action: input_text.set_value
+                metadata: {}
+                data:
+                  value: Courtyard
+                target:
+                  entity_id: input_text.living_room_triggered_by
+    alias: Set Triggered By
+  - if:
+      - condition: trigger
+        id:
+          - timerFinished
+      - condition: state
+        entity_id: input_boolean.living_room_lights_auto_mode
+        state: "on"
+    then:
+      - action: scene.turn_on
+        metadata: {}
+        data:
+          transition: 5
+        target:
+          entity_id: scene.living_area_off
+    alias: Timer Finished --> Turn Off Lights
+  - if:
+      - condition: trigger
+        id:
+          - autoReset
+    then:
+      - action: input_boolean.turn_on
+        metadata: {}
+        data: {}
+        target:
+          entity_id: input_boolean.living_room_lights_auto_mode
+    alias: Morning Reset --> Auto Lighting Enabled
+variables:
+  brightness_step: 2
+  temperature_step: 50
+  transition_time: 5
+  living_light_entity: light.living_room_lights
+  living_day_brightness: 100
+  living_day_temperature: 3800
+  living_evening_brightness: 60
+  living_evening_temperature: 2400
+  living_night_brightness: 20
+  living_night_temperature: 2200
+  living_off_brightness: 0
+  living_off_temperature: 2400
+  stove_light_entity: light.kitchen_stove_lights
+  stove_day_brightness: 50
+  stove_day_temperature: 3800
+  stove_evening_brightness: 50
+  stove_evening_temperature: 2400
+  stove_night_brightness: 20
+  stove_night_temperature: 2200
+  stove_off_brightness: 0
+  stove_off_temperature: 2700
+  hall_light_entity: light.hall_lights
+  hall_day_brightness: 70
+  hall_day_temperature: 3800
+  hall_evening_brightness: 35
+  hall_evening_temperature: 2400
+  hall_night_brightness: 20
+  hall_night_temperature: 2200
+  hall_off_brightness: 0
+  hall_off_temperature: 2400
+mode: single
