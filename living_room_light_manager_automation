@@ -1,5 +1,5 @@
 alias: Living Room Light Manager
-description: "Controls the lights, the brightness and temperature"
+description: Controls the lights, the brightness and temperature
 triggers:
   - id: timeTrigger
     trigger: time_pattern
@@ -107,6 +107,26 @@ actions:
                     {% else %}
                       {{ hall_off_temperature }}
                     {% endif %}
+                  kitchen_strip_target_brightness: |
+                    {% if tod == 'Day' %}
+                      {{ kitchen_strip_day_brightness }}
+                    {% elif tod == 'Evening' %}
+                      {{ kitchen_strip_evening_brightness }}
+                    {% elif tod == 'Night' %}
+                      {{ kitchen_strip_night_brightness }}
+                    {% else %}
+                      {{ kitchen_strip_off_brightness }}
+                    {% endif %}
+                  kitchen_strip_target_temperature: |
+                    {% if tod == 'Day' %}
+                      {{ kitchen_strip_day_temperature }}
+                    {% elif tod == 'Evening' %}
+                      {{ kitchen_strip_evening_temperature }}
+                    {% elif tod == 'Night' %}
+                      {{ kitchen_strip_night_temperature }}
+                    {% else %}
+                      {{ kitchen_strip_off_temperature }}
+                    {% endif %}
               - data:
                   light_entity: "{{ living_light_entity }}"
                   target_brightness_percent: "{{ living_target_brightness }}"
@@ -127,6 +147,14 @@ actions:
                   light_entity: "{{ hall_light_entity }}"
                   target_brightness_percent: "{{ hall_target_brightness }}"
                   target_temperature: "{{ hall_target_temperature }}"
+                  brightness_step_percent: "{{ brightness_step }}"
+                  temperature_step: "{{ temperature_step }}"
+                  transition: "{{ transition_time }}"
+                action: script.light_step_to_target
+              - data:
+                  light_entity: "{{ kitchen_strip_light_entity }}"
+                  target_brightness_percent: "{{ kitchen_strip_target_brightness }}"
+                  target_temperature: "{{ kitchen_strip_target_temperature }}"
                   brightness_step_percent: "{{ brightness_step }}"
                   temperature_step: "{{ temperature_step }}"
                   transition: "{{ transition_time }}"
@@ -295,4 +323,13 @@ variables:
   hall_night_temperature: 2200
   hall_off_brightness: 0
   hall_off_temperature: 2400
+  kitchen_strip_light_entity: light.kitchen_strip_light
+  kitchen_strip_day_brightness: 50
+  kitchen_strip_day_temperature: 3800
+  kitchen_strip_evening_brightness: 25
+  kitchen_strip_evening_temperature: 2000
+  kitchen_strip_night_brightness: 5
+  kitchen_strip_night_temperature: 2000
+  kitchen_strip_off_brightness: 0
+  kitchen_strip_off_temperature: 2400
 mode: single
